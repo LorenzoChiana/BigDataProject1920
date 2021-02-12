@@ -1,0 +1,384 @@
+\documentclass[10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage[pdftex]{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{minted}
+
+    
+\title{\textbf{Report del progetto di Big Data: \\Analisi delle visualizzazioni dei video YouTube di tendenza}}
+
+\author{Lorenzo Chiana - Mat. 0000880396}
+	
+\date{\today}
+
+\begin{document}
+\maketitle
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduzione}
+\subsection{Descrizione del dataset}
+
+\begin{itemize}
+\item Questo dataset è una raccolta giornaliera dei video di tendenza di YouTube di diverse nazioni. Secondo la rivista Veriety per determinare i video più di tendenza dell'anno, YouTube utilizza una combinazione di fattori tra cui il numero di visualizzazioni, condivisioni, commenti e ``Mi piace".
+\item Link al sito dove è pubblicato il dataset (\url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset}).
+\item Link diretti per scaricati i singoli file:
+    \begin{itemize}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=BR_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=CA_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=DE_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=FR_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=GB_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=KR_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=MX_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=US_youtube_trending_data.csv}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=BR_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=CA_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=DE_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=FR_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=GB_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=KR_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=MX_category_id.json}
+        \item \url{https://www.kaggle.com/rsrishav/youtube-trending-video-dataset?select=US_category_id.json}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Descrizione dei file}
+\subsubsection{File CSV}
+Ogni file csv contiene i video di tendenza del relativo paese e contiene di seguenti campi:
+\begin{itemize}
+    \item \textbf{video\_id}, identificato del video;
+    \item \textbf{title}, titolo del video;
+    \item \textbf{publishedAt}, data di pubblicazione del video;
+    \item \textbf{channelId}, identificativo del canale;
+    \item \textbf{channelTitle}, nome del canale;
+    \item \textbf{categoryId}, identificativo della categoria;
+    \item \textbf{trending\_date}, data in cui il video è diventato virale;
+    \item \textbf{tags}, elenco dei tag;
+    \item \textbf{view\_count}, numero di visualizzazioni;
+    \item \textbf{likes}, numero dei ``Mi piace";
+    \item \textbf{dislikes}, numero dei ``Non mi piace";
+    \item \textbf{comment\_count}, numero di commenti;
+    \item \textbf{thumbnail\_link}, link della thumbnail;
+    \item \textbf{comments\_disabled}, flag che indica se i commenti sono stati disattivati;
+    \item \textbf{ratings\_disabled}, flag che indica se è stata disattivata la possibilità di mettere ``Mi piace" o ``Non mi piace";
+    \item \textbf{description}, descrizione del video.
+\end{itemize}
+\subsubsection{File JSON}
+Ogni file json contiene la relazione tra l'identificativo del video e il relativo nome e ha la seguente struttura:\\
+\textbf{root\{}
+\begin{itemize}
+    \item \textbf{kind}
+    \item \textbf{etag}
+    \item \textbf{items [}
+    \begin{itemize}
+    \item \textbf{\{}
+    \begin{itemize}
+        \item \textbf{kind}
+        \item \textbf{etag}
+        \item \textbf{kind}
+        \item \textbf{id}
+        \item \textbf{snippet\{}
+        \begin{itemize}
+            \item \textbf{title}
+            \item \textbf{assignable}
+            \item \textbf{channelId}
+        \end{itemize}
+        \item \textbf{\}}
+    \end{itemize}
+    \item \textbf{\}}
+    \end{itemize}
+\end{itemize}
+\textbf{\}}
+
+\section{Data preparation}
+File path on HDFS:
+\begin{itemize}
+\item \path{/user/lchiana/exam/dataset/BR_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/CA_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/DE_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/FR_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/KR_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/MX_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/US_youtube_trending_data.csv}
+\item \path{/user/lchiana/exam/dataset/Categoy_id_flat.json}
+\end{itemize}
+
+\subsection{Pre-processing}
+Una delle esigenze per questo progetto è quella di sapere a che nome alfanumerico corrisponde ogni identificativo di categoria. Di conseguenza le sole informazioni che servono all'interno del file json sono relative ai campi \textit{id} e \textit{title}.
+Per facilitare la lettura di questi file per la fase implementativa si sono andati ad estrarre questi campi significativi in maniera automatizzata tramite comando jq.
+Ciò ha portato in evidenza che tutti i file json dei vari paesi contenevano le medesime informazioni nei relativi campi estratti ad eccezione di quello relativo agli Stati Uniti che conteneva un identificativo in più.
+Perciò, data l'uguaglianza dei vari file, si è scelto di tenerne solo uno e, nello specifico, quello risultatante dal file json relativo agli US.
+\begin{minted}{bash}
+jq -c '(.items[] | {id, category: .snippet.title})' 
+US_category_id.json > Category_id_flat.json
+\end{minted}
+
+Ulteriore problematica si è presentata nella lettura dei file csv data la presenza di newlines all'interno di alcuni campi. Di conseguenza si è ricorsi ad un comando awk per andare a pulire i vari file dalla presenza di \textbackslash n e  \textbackslash r.
+\begin{minted}{bash}
+awk 'BEGIN{FS=OFS=","} {for(i=16;i<=NF;i++){
+gsub(/\\n/,"",$i); gsub(/\r/,"",$i); gsub(/\n/,"",$i)}}1'
+BR_youtube_trending_data.csv > ./new/BR_youtube_trending_data.csv
+
+\end{minted}
+\section{Jobs}
+
+\subsection{Job \#1: Numero medio di visualizzazioni per ogni categoria di video}
+Con questo job si vuole andare a calcolare il numero medio di visualizzazioni dei video andati in tendenza suddiviso per categoria.
+
+\subsubsection{MapReduce}
+\begin{itemize}
+    \item File/Table in input:
+    \begin{itemize}
+        \item \path{/user/lchiana/exam/dataset/BR_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/CA_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/DE_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/FR_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/KR_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/MX_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/US_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/Categoy_id_flat.json}
+    \end{itemize}
+    \item File/Table in output:
+    \begin{itemize}
+        \item \path{/user/lchiana/exam/outputs/mapreduce/output1}
+        \item \path{/user/lchiana/exam/outputs/mapreduce/output2}
+        \item \path{/user/lchiana/exam/outputs/mapreduce/output3}
+    \end{itemize}
+    \item Tempo di esecuzione:
+    \begin{itemize}
+        \item Job1:
+        \begin{itemize}
+            \item Elapse: 1mins, 24sec
+            \item Average Map Time:	43sec
+            \item Average Shuffle Time: 7sec
+            \item Average Merge Time: 0sec
+            \item Average Reduce Time: 0sec
+        \end{itemize}
+        \item Job2:
+        \begin{itemize}
+            \item Elapse: 1mins, 1sec
+            \item Average Map Time:	8sec
+            \item Average Shuffle Time: 8sec
+            \item Average Merge Time: 0sec
+            \item Average Reduce Time: 0sec
+        \end{itemize}
+        \item Job3:
+        \begin{itemize}
+            \item Elapse: 51sec
+            \item Average Map Time:	8sec
+            \item Average Shuffle Time: 7sec
+            \item Average Merge Time: 0sec
+            \item Average Reduce Time: 0sec
+        \end{itemize}
+    \end{itemize}
+    \item Quantità di risorse:
+    \begin{itemize}
+        \item Job1:
+        \begin{itemize}
+        \item File System Counters
+        \begin{itemize}
+            \item FILE: Number of bytes read: 1201569
+            \item FILE: Number of bytes written: 6461080
+            \item HDFS: Number of bytes read: 332575241
+            \item HDFS: Number of bytes written: 156
+            \item HDFS: Number of read operations: 81
+            \item HDFS: Number of write operations: 40
+        \end{itemize}
+        \end{itemize}
+        \item Job2:
+        \begin{itemize}
+        \item File System Counters
+        \begin{itemize}
+            \item FILE: Number of bytes read: 1295
+            \item FILE: Number of bytes written: 6078508
+            \item HDFS: Number of bytes read: 7803
+            \item HDFS: Number of bytes written: 317
+            \item HDFS: Number of read operations: 123
+            \item HDFS: Number of write operations: 40
+        \end{itemize}
+        \end{itemize}
+        \item Job3:
+        \begin{itemize}
+        \item File System Counters
+        \begin{itemize}
+            \item FILE: Number of bytes read: 746
+            \item FILE: Number of bytes written: 5924693
+            \item HDFS: Number of bytes read: 3477
+            \item HDFS: Number of bytes written: 317
+            \item HDFS: Number of read operations: 120
+            \item HDFS: Number of write operations: 40
+        \end{itemize}
+        \end{itemize}
+    \end{itemize}
+    \item YARN application history:
+        \begin{itemize}
+            \item \url{http://isi-vclust0.csr.unibo.it:19888/jobhistory/job/job_1610205429022_0195}
+            \item \url{http://isi-vclust0.csr.unibo.it:19888/jobhistory/job/job_1610205429022_0196}
+            \item \url{http://isi-vclust0.csr.unibo.it:19888/jobhistory/job/job_1610205429022_0197}
+        \end{itemize}
+    \item Descrizione dell'implementazione:
+        \begin{itemize}
+            \item First Mapper
+                \begin{itemize}
+                    \item suddivide i record in input
+                    \item prende i valori relativi a categoryId e view\_count filtrando i valori che corrispondono al nome della tabella
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: file.csv
+                        \item output: categoryId \textrightarrow view\_count
+                    \end{itemize}
+                \end{itemize}
+            \item First Reducer
+                \begin{itemize}
+                    \item prende le varie visualizzazioni
+                    \item calcola la media
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: categoryId \textrightarrow [view\_count, view\_count, ...]
+                        \item output: categoryId \textrightarrow avg\_views
+                    \end{itemize}
+                \end{itemize}
+            \item Second Mapper 1
+                \begin{itemize}
+                    \item lettura basilare dell'output del primo reducer come coppia chiave valore
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: categoryId \textrightarrow avg\_views
+                        \item output: categoryId \textrightarrow avg\_views
+                    \end{itemize}
+                \end{itemize}
+            \item Second Mapper 2
+                \begin{itemize}
+                    \item parsing del file json per ricavare i valori dell'id e del nome della categoria
+                    \item aggiunge l'etichetta ``\textit{\#join\#}" prima del valore del nome in modo tale che, durante la fase di reduce, ci sia modo di distinguere i due tipi di valori in input.
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: record json
+                        \item output: id \textrightarrow \#join\#category
+                    \end{itemize}
+                \end{itemize}
+            \item Second Reducer
+                \begin{itemize}
+                    \item estrae i valori che gli arrivano in input dai due mapper
+                    \item identifica da quale mapper arriva tale valore (grazie la presenza o meno dell'etichetta ``\textit{\#join\#}")
+                    \item se il valore gli arriva da Second Mapper 2 lo imposta come chiave per l'output, altrimenti come valore
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: categoryId \textrightarrow avg\_views o id \textrightarrow \#join\#category
+                        \item output: category \textrightarrow avg\_views
+                    \end{itemize}
+                \end{itemize}
+            \item Third Mapper
+                \begin{itemize}
+                    \item inverte la chiave e il valore dell'output del secondo reducer utile per il sorting
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: category \textrightarrow avg\_view
+                        \item output: avg\_view \textrightarrow category
+                    \end{itemize}
+                \end{itemize}
+            \item Sorting
+                \begin{itemize}
+                    \item ordinamento decrescente delle chiavi dell'output del terzo mapper
+                \end{itemize}
+            \item Third Reducer
+                \begin{itemize}
+                    \item inverte la chiave e il valore dell'output del sorting
+                    \item versione schematica:
+                    \begin{itemize}
+                        \item input: avg\_view (ordinato) \textrightarrow category
+                        \item output: category \textrightarrow avg\_view (ordinato)
+                    \end{itemize}
+                \end{itemize}
+        \end{itemize}
+        \item Considerazioni sulle performance:
+            \begin{itemize}
+                \item il numero dei mapper è scelto di default dal framework in base agli input split
+                \item il numero dei reducer è scelto di default dal framework ciò si riflette sulla struttura dell'output finale che viene salvato soddiviso, in questo caso specifico, in venti file (uno per ogni reducer che il framework ha creato). 
+            \end{itemize}
+        \item Output:
+            \begin{itemize}
+                \item Music 3844296
+                \item Gaming 2404676
+                \item Science & Technology	1935558
+                \item Entertainment	1346296
+                \item Film & Animation	1300239
+                \item People & Blogs	1237091
+                \item Sports	1109023
+                \item Comedy	1076787
+                \item News & Politics	936546
+                \item Howto & Style	833404
+                \item Pets & Animals	832279
+                \item Nonprofits & Activism	810967
+                \item Education	661902
+                \item Autos & Vehicles	593843
+                \item Travel & Events	487401
+            \end{itemize}
+        
+\end{itemize}
+
+\subsubsection{Spark}
+\begin{itemize}
+    \item File/Table in input:
+    \begin{itemize}
+        \item \path{/user/lchiana/exam/dataset/BR_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/CA_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/DE_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/FR_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/KR_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/MX_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/US_youtube_trending_data.csv}
+        \item \path{/user/lchiana/exam/dataset/Categoy_id_flat.json}
+    \end{itemize}
+    \item File/Table in output:
+    \begin{itemize}
+        \item \path{/user/lchiana/exam/outputs/spark/output}
+    \end{itemize}
+    \item Tempo di esecuzione: 1.1 min
+    \item Quantità di risorse:
+        \begin{itemize}
+            \item Input 317.2 MB
+            \item Shuffle Read 13.2 KB
+            \item Shuffle Write 5.9 KB
+        \end{itemize}
+    \item YARN application history: \url{http://isi-vclust0.csr.unibo.it:18088/history/application_1610205429022_0194/jobs/}
+    \item Descrizione dell'implementazione:
+        \begin{itemize}
+            \item creazione di un RDD per i dati estratti dai file csv
+            \item creazione di un RDD per i dati estratti dal file json
+            \item trasformazione del primo RDD prima in uno che mappa categoryId e view\_count e poi in uno contenente la media delle visalizzazioni per ogni id di categoria.
+            \item trasformazione del secondo RDD in uno che mappa l'id di categoria e il relativo nome.
+            \item join dei due RDD risultati sulla base dell'id di categoria e ordinamento sulla base delle visualizzazioni medie.
+        \end{itemize}
+    \item Considerazioni sulle performance:
+    \begin{itemize}
+        \item gli RDD vengono resi persistenti in cache nel momento in cui hanno trasformazioni significative.
+        \item il numero di partizioni di un RDD è deciso di default dal framework ciò si riflette sulla struttura dell'output finale che viene salvato soddiviso in più parti.
+    \end{itemize}
+    
+    \item Output:
+        \begin{itemize}
+            \item (Music,3844296)
+            \item (Gaming,2404676)
+            \item (Science & Technology,1935558)
+            \item (Entertainment,1346296)
+            \item (Film & Animation,1300239)
+            \item (People & Blogs,1237091)
+            \item (Sports,1109023)
+            \item (Comedy,1076787)
+            \item (News & Politics,936546)
+            \item (Howto & Style,833404)
+            \item (Pets & Animals,832279)
+            \item (Nonprofits & Activism,810967)
+            \item (Education,661902)
+            \item (Autos & Vehicles,593843)
+            \item (Travel & Events,487401)
+        \end{itemize}
+\end{itemize}
+\end{document}
